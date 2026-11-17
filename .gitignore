@@ -1,0 +1,79 @@
+# ==============================================================================
+# Environment & Secrets (Never commit credentials, PATs, or API keys)
+# ==============================================================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.json
+auth.json
+
+# ==============================================================================
+# Web Simulation / Frontend Dependencies & Builds
+# ==============================================================================
+node_modules/
+dist/
+build/
+.cache/
+.parcel-cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==============================================================================
+# Mainframe / z/OS & Zowe Tooling Artifacts
+# ==============================================================================
+# Zowe CLI & VS Code profiles/logs
+.zowe/
+zowe.config.json
+zowe.schema.json
+*.zowe.log
+
+# Temporary compiler listings, listings, dumps, and spools
+*.listing
+*.lst
+*.spool
+*.dump
+*.diag
+*.xcom
+
+# ==============================================================================
+# OS Generated Files
+# ==============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+Desktop.ini
+
+# ==============================================================================
+# IDE & Editor Configurations
+# ==============================================================================
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+*~
+
+# VS Code (preserve settings/extensions if shared with team, ignore user state)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.vscode/*.log

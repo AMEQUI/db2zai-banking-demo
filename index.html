@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IBM Db2 AI for z/OS — Banking EOD Batch Optimization Simulator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cds-ui-01: #ffffff;
+      --cds-ui-02: #f4f4f4;
+      --cds-ui-03: #e0e0e0;
+      --cds-ui-04: #8d8d8d;
+      --cds-ui-05: #161616;
+      --cds-text-01: #161616;
+      --cds-text-02: #525252;
+      --cds-text-03: #a8a8a8;
+      --cds-interactive-01: #0f62fe;
+      --cds-interactive-hover: #0353e9;
+      --cds-support-01: #da1e28;
+      --cds-support-02: #24a148;
+      --cds-support-03: #f1c21b;
+      --cds-support-04: #0043ce;
+      --cds-border: #e0e0e0;
+      --cds-header-bg: #161616;
+      --cds-header-text: #ffffff;
+      --cds-sidebar-bg: #262626;
+      --cds-sidebar-active: #393939;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--cds-ui-02);
+      color: var(--cds-text-01);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Header */
+    header.cds-header {
+      height: 48px;
+      background-color: var(--cds-header-bg);
+      color: var(--cds-header-text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.25rem;
+      border-bottom: 1px solid #393939;
+      z-index: 100;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 400;
+    }
+
+    .header-brand strong {
+      font-weight: 600;
+    }
+
+    .header-badge {
+      background: #0f62fe;
+      color: white;
+      font-size: 0.6875rem;
+      padding: 2px 8px;
+      font-weight: 600;
+      border-radius: 2px;
+      letter-spacing: 0.5px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.8125rem;
+    }
+
+    .subsystem-select {
+      background: #393939;
+      color: #fff;
+      border: 1px solid #525252;
+      padding: 4px 10px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      border-radius: 2px;
+    }
+
+    .btn-talktrack {
+      background: transparent;
+      color: #a8a8a8;
+      border: 1px solid #525252;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-talktrack:hover {
+      color: #fff;
+      border-color: #0f62fe;
+    }
+
+    /* Layout */
+    .app-body {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 48px);
+    }
+
+    /* Sidebar */
+    aside.cds-sidebar {
+      width: 240px;
+      background-color: var(--cds-sidebar-bg);
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar-section {
+      padding: 1.25rem 1rem 0.5rem 1rem;
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #a8a8a8;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.25rem;
+      color: #c6c6c6;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background 0.15s;
+      border-left: 4px solid transparent;
+      text-decoration: none;
+    }
+
+    .nav-item:hover {
+      background-color: #333333;
+      color: #ffffff;
+    }
+
+    .nav-item.active {
+      background-color: var(--cds-sidebar-active);
+      color: #ffffff;
+      border-left-color: var(--cds-interactive-01);
+      font-weight: 600;
+    }
+
+    .nav-step-badge {
+      background: #525252;
+      color: #fff;
+      font-size: 0.6875rem;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+
+    .nav-item.active .nav-step-badge {
+      background: var(--cds-interactive-01);
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 1rem;
+      border-top: 1px solid #393939;
+      font-size: 0.6875rem;
+      color: #8d8d8d;
+    }
+
+    /* Main Content */
+    main.cds-content {
+      flex: 1;
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .content-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--cds-border);
+      padding-bottom: 1rem;
+    }
+
+    .content-title {
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: var(--cds-text-01);
+    }
+
+    .content-subtitle {
+      font-size: 0.875rem;
+      color: var(--cds-text-02);
+      margin-top: 0.25rem;
+    }
+
+    /* Steps Progress bar */
+    .stepper {
+      display: flex;
+      background: var(--cds-ui-01);
+      border: 1px solid var(--cds-border);
+      border-radius: 2px;
+    }
+
+    .step-node {
+      flex: 1;
+      padding: 0.875rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--cds-text-02);
+      border-right: 1px solid var(--cds-border);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .step-node:last-child {
+      border-right: none;
+    }
+
+    .step-node:hover {
+      background: #f8f8f8;
+    }
+
+    .step-node.active {
+      background: #edf5ff;
+      color: var(--cds-interactive-01);
+      font-weight: 600;
+      border-bottom: 2px solid var(--cds-interactive-01);
+    }
+
+    .step-node.completed .step-number {
+      background: var(--cds-support-02);
+      color: white;
+    }
+
+    .step-number {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--cds-ui-03);
+      color: var(--cds-text-01);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .step-node.active .step-number {
+      background: var(--cds-interactive-01);
+      color: white;
+    }
+
+    /* Card Panels */
+    .cds-tile {
+      background: var(--cds-ui-01);
+      border: 1px solid var(--cds-border);
+      padding: 1.5rem;
+      border-radius: 2px;
+    }
+
+    .tile-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .tile-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    /* Tables */
+    .cds-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      text-align: left;
+    }
+
+    .cds-table th {
+      background-color: var(--cds-ui-02);
+      color: var(--cds-text-01);
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      border-bottom: 1px solid var(--cds-border);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .cds-table td {
+      padding: 0.875rem 1rem;
+      border-bottom: 1px solid var(--cds-border);
+      color: var(--cds-text-01);
+    }
+
+    .cds-table tr.clickable {
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .cds-table tr.clickable:hover {
+      background-color: #f0f4ff;
+    }
+
+    .cds-table tr.flagged {
+      background-color: #fff1f1;
+    }
+
+    .badge-alert {
+      background: #ffebe8;
+      color: var(--cds-support-01);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-success {
+      background: #e5f6e8;
+      color: var(--cds-support-02);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-neutral {
+      background: var(--cds-ui-03);
+      color: var(--cds-text-02);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+    }
+
+    .code-box {
+      background: #161616;
+      color: #f4f4f4;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8125rem;
+      padding: 1rem;
+      border-radius: 2px;
+      line-height: 1.5;
+      overflow-x: auto;
+    }
+
+    /* Comparison Grid */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .compare-card {
+      border: 1px solid var(--cds-border);
+      padding: 1.25rem;
+      background: var(--cds-ui-01);
+    }
+
+    .compare-card.before {
+      border-top: 4px solid var(--cds-support-01);
+    }
+
+    .compare-card.after {
+      border-top: 4px solid var(--cds-support-02);
+      background: #fcfdfc;
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px dashed var(--cds-border);
+      font-size: 0.875rem;
+    }
+
+    .metric-row:last-child {
+      border-bottom: none;
+    }
+
+    .metric-label {
+      color: var(--cds-text-02);
+    }
+
+    .metric-value {
+      font-weight: 600;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .delta-pill {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 2px;
+      margin-left: 6px;
+    }
+
+    .delta-pill.positive {
+      background: #e5f6e8;
+      color: var(--cds-support-02);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.625rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.15s;
+      border-radius: 2px;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background-color: var(--cds-interactive-01);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--cds-interactive-hover);
+    }
+
+    .btn-secondary {
+      background-color: #393939;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background-color: #4c4c4c;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--cds-interactive-01);
+      border: 1px solid var(--cds-interactive-01);
+    }
+
+    .btn-ghost:hover {
+      background: #edf5ff;
+    }
+
+    /* Talktrack Drawer */
+    .talktrack-panel {
+      position: fixed;
+      right: 0;
+      top: 48px;
+      width: 380px;
+      height: calc(100vh - 48px);
+      background: #ffffff;
+      border-left: 1px solid var(--cds-border);
+      box-shadow: -4px 0 16px rgba(0, 0, 0, 0.08);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      z-index: 90;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .talktrack-panel.open {
+      transform: translateX(0);
+    }
+
+    .talktrack-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--cds-border);
+      padding-bottom: 0.75rem;
+    }
+
+    .talktrack-body {
+      font-size: 0.875rem;
+      line-height: 1.6;
+      color: var(--cds-text-02);
+      overflow-y: auto;
+    }
+
+    .talktrack-quote {
+      background: #edf5ff;
+      border-left: 3px solid var(--cds-interactive-01);
+      padding: 0.75rem 1rem;
+      font-style: italic;
+      color: #0043ce;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+    }
+
+    /* Modal / Simulation Progress */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-card {
+      background: white;
+      width: 540px;
+      padding: 2rem;
+      border-radius: 2px;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .progress-bar-container {
+      background: var(--cds-ui-03);
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 1.25rem 0;
+    }
+
+    .progress-bar-fill {
+      background: var(--cds-interactive-01);
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    .simulation-log {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: #525252;
+      background: var(--cds-ui-02);
+      padding: 0.75rem;
+      border-radius: 2px;
+      height: 100px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header class="cds-header">
+    <div class="header-brand">
+      <svg width="20" height="20" viewBox="0 0 32 32" fill="#0f62fe">
+        <path d="M26 4H6a2 2 0 00-2 2v20a2 2 0 002 2h20a2 2 0 002-2V6a2 2 0 00-2-2zM6 6h20v4H6zm0 6h20v14H6z"/>
+        <path d="M10 16h12v2H10zm0 4h8v2H10z"/>
+      </svg>
+      <span>IBM <strong>Db2 AI for z/OS</strong></span>
+      <span class="header-badge">LIVE SIMULATOR</span>
+    </div>
+    <div class="header-actions">
+      <span>Subsystem:</span>
+      <select class="subsystem-select" id="subsystemSelect">
+        <option value="DB2A">DB2A (z/OS 3.1 - Mode V13R1M500)</option>
+        <option value="DB2B">DB2B (Sandbox DR)</option>
+      </select>
+      <button class="btn-talktrack" onclick="toggleTalkTrack()">
+        <span>🎙️ Presenter Script</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- App Body -->
+  <div class="app-body">
+    <!-- Sidebar -->
+    <aside class="cds-sidebar">
+      <div class="sidebar-section">Workload Optimization</div>
+      <a class="nav-item active" onclick="goToStep(1)">
+        <span class="nav-step-badge">1</span>
+        <span>Baseline Run</span>
+      </a>
+      <a class="nav-item" onclick="goToStep(2)">
+        <span class="nav-step-badge">2</span>
+        <span>AI Recommendation</span>
+      </a>
+      <a class="nav-item" onclick="goToStep(3)">
+        <span class="nav-step-badge">3</span>
+        <span>Apply DDL & Rebind</span>
+      </a>
+      <a class="nav-item" onclick="goToStep(4)">
+        <span class="nav-step-badge">4</span>
+        <span>Before / After Proof</span>
+      </a>
+
+      <div class="sidebar-section">Mainframe Assets</div>
+      <a class="nav-item" href="https://github.com/AMEQUI/db2zai-banking-batch-demo" target="_blank">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        <span>GitHub Repository</span>
+      </a>
+
+      <div class="sidebar-footer">
+        Client Demo Sandbox<br>
+        Env: <strong>TechZone DB2ZAI-01</strong>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="cds-content" id="mainContent">
+      
+      <!-- Stepper Nav -->
+      <div class="stepper">
+        <div class="step-node active" id="stepNode1" onclick="goToStep(1)">
+          <div class="step-number">1</div>
+          <div>Baseline & Detection</div>
+        </div>
+        <div class="step-node" id="stepNode2" onclick="goToStep(2)">
+          <div class="step-number">2</div>
+          <div>AI Recommendation</div>
+        </div>
+        <div class="step-node" id="stepNode3" onclick="goToStep(3)">
+          <div class="step-number">3</div>
+          <div>Apply & Rebind</div>
+        </div>
+        <div class="step-node" id="stepNode4" onclick="goToStep(4)">
+          <div class="step-number">4</div>
+          <div>Metrics Verification</div>
+        </div>
+      </div>
+
+      <!-- STEP 1 CONTAINER -->
+      <div id="step1View" class="step-view">
+        <div class="content-header">
+          <div>
+            <h1 class="content-title">Step 1: Baseline Workload & Bottleneck Detection</h1>
+            <p class="content-subtitle">Db2 AI for z/OS continuously monitors static package execution metrics without trace overhead.</p>
+          </div>
+          <button class="btn btn-primary" onclick="goToStep(2)">
+            Review AI Insights &rarr;
+          </button>
+        </div>
+
+        <div class="cds-tile" style="margin-top: 1rem;">
+          <div class="tile-header">
+            <div>
+              <div class="tile-title">Monitored Package: COL_BANKING.BNK7100B (EOD Posting Batch)</div>
+              <p style="font-size: 0.8125rem; color: #525252; margin-top: 2px;">Program: Core Batch Interest & Ledger Reconciliation | Language: COBOL | Bind: STATIC</p>
+            </div>
+            <span class="badge-alert">⚠️ Performance Bottleneck Flagged</span>
+          </div>
+
+          <table class="cds-table">
+            <thead>
+              <tr>
+                <th>Stmt #</th>
+                <th>SQL Operation</th>
+                <th>Target Object</th>
+                <th>Matching Cols</th>
+                <th>Index-Only</th>
+                <th>Avg Elapsed</th>
+                <th>Avg Getpages</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="clickable flagged" onclick="goToStep(2)">
+                <td><strong>420</strong></td>
+                <td>SELECT (SUM, COUNT)</td>
+                <td>BANKDB01.ACCT_TRANSACTION</td>
+                <td>1 (ACCT_ID)</td>
+                <td><span style="color: #da1e28; font-weight: 600;">❌ N</span></td>
+                <td><strong>47.10s</strong></td>
+                <td><strong style="color: #da1e28;">2,480,120</strong></td>
+                <td><span class="badge-alert">Tuning Candidate</span></td>
+              </tr>
+              <tr>
+                <td>105</td>
+                <td>UPDATE (BALANCES)</td>
+                <td>BANKDB01.ACCT_SUMMARY</td>
+                <td>2</td>
+                <td>❌ N</td>
+                <td>0.04s</td>
+                <td>180</td>
+                <td><span class="badge-neutral">Normal</span></td>
+              </tr>
+              <tr>
+                <td>210</td>
+                <td>INSERT (AUDIT)</td>
+                <td>BANKDB01.ACCT_AUDIT_LOG</td>
+                <td>-</td>
+                <td>-</td>
+                <td>0.01s</td>
+                <td>12</td>
+                <td><span class="badge-neutral">Normal</span></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="margin-top: 1.5rem;">
+            <h4 style="font-size: 0.875rem; margin-bottom: 0.5rem; font-weight: 600;">Static SQL Text in COBOL Program (Stmt #420):</h4>
+            <div class="code-box">
+SELECT SUM(TXN_AMOUNT), COUNT(*)
+  INTO :WS-TOTAL-AMT, :WS-TOTAL-COUNT
+  FROM ACCT_TRANSACTION
+ WHERE ACCT_ID      = :WS-ACCT-ID
+   AND TXN_DATE    >= :WS-POSTING-DATE
+   AND STATUS_CODE  = 'POSTED';
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2 CONTAINER -->
+      <div id="step2View" class="step-view" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1 class="content-title">Step 2: Db2 AI for z/OS Tuning Recommendation</h1>
+            <p class="content-subtitle">AI-driven access path evaluation surfaces an index covering recommendation to eliminate table I/O.</p>
+          </div>
+          <button class="btn btn-primary" onclick="goToStep(3)">
+            Proceed to DDL & Rebind &rarr;
+          </button>
+        </div>
+
+        <div class="cds-tile" style="margin-top: 1rem; border-left: 4px solid var(--cds-interactive-01);">
+          <div class="tile-header">
+            <div>
+              <div class="tile-title">Tuning Insight #IDX-2026-8814: Index Extension Recommendation</div>
+              <p style="font-size: 0.8125rem; color: #525252;">Confidence Level: <strong>96%</strong> | Projected Cost Reduction: <strong>-91.5%</strong></p>
+            </div>
+            <span class="badge-success">✨ AI Optimization Ready</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="background: var(--cds-ui-02); padding: 1rem; border-radius: 2px;">
+              <h4 style="font-size: 0.8125rem; color: #525252; margin-bottom: 0.5rem;">CURRENT ACCESS PATH</h4>
+              <p style="font-size: 0.875rem; font-weight: 600;">IX_TXN_ACCT_DT (ACCT_ID, TXN_DATE)</p>
+              <ul style="font-size: 0.8125rem; margin-top: 0.5rem; padding-left: 1.25rem; color: #525252; line-height: 1.5;">
+                <li><code>MATCHCOLS = 1</code> (ACCT_ID exact match)</li>
+                <li><code>INDEXONLY = 'N'</code> (Must fetch every row from data page)</li>
+                <li>Result: 2.48M buffer pool getpages per batch run</li>
+              </ul>
+            </div>
+
+            <div style="background: #edf5ff; padding: 1rem; border-radius: 2px; border: 1px solid #c9deff;">
+              <h4 style="font-size: 0.8125rem; color: #0043ce; margin-bottom: 0.5rem;">RECOMMENDED ACCESS PATH (COVERING INDEX)</h4>
+              <p style="font-size: 0.875rem; font-weight: 600; color: #0043ce;">IX_TXN_ACCT_EOD (ACCT_ID, TXN_DATE, STATUS_CODE, TXN_AMOUNT)</p>
+              <ul style="font-size: 0.8125rem; margin-top: 0.5rem; padding-left: 1.25rem; color: #0043ce; line-height: 1.5;">
+                <li><code>MATCHCOLS = 2</code> (Exact on ACCT_ID, Range on TXN_DATE)</li>
+                <li><code>INDEXONLY = 'Y'</code> (100% satisfied from index b-tree)</li>
+                <li>Result: Zero synchronous table data page reads</li>
+              </ul>
+            </div>
+          </div>
+
+          <div>
+            <h4 style="font-size: 0.875rem; margin-bottom: 0.5rem; font-weight: 600;">Recommended DDL:</h4>
+            <div class="code-box">
+CREATE INDEX BANKDB01.IX_TXN_ACCT_EOD
+    ON BANKDB01.ACCT_TRANSACTION
+     ( ACCT_ID      ASC,
+       TXN_DATE     ASC,
+       STATUS_CODE  ASC,
+       TXN_AMOUNT   ASC )
+    USING STOGROUP BANKSTG
+    PRIQTY 150000 SECQTY 15000
+    BUFFERPOOL BP2
+    CLOSE NO;
+
+COMMIT;
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3 CONTAINER -->
+      <div id="step3View" class="step-view" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1 class="content-title">Step 3: Execute Index DDL & Rebind Static Package</h1>
+            <p class="content-subtitle">Apply the recommended index definition and trigger a package rebind with EXPLAIN(YES).</p>
+          </div>
+          <button class="btn btn-primary" id="btnRunSimulation" onclick="runRebindSimulation()">
+            ⚡ Execute DDL & Rebind Now
+          </button>
+        </div>
+
+        <div class="cds-tile" style="margin-top: 1rem;">
+          <div class="tile-header">
+            <div class="tile-title">Batch JCL & Rebind Control Card</div>
+            <span class="badge-neutral">Ready for Execution</span>
+          </div>
+
+          <div class="code-box" style="margin-bottom: 1.5rem;">
+//REBIND01 JOB (ACCT),'REBIND EOD',CLASS=A,MSGCLASS=X
+//STEP01   EXEC PGM=IKJEFT01
+//SYSTSPRT DD SYSOUT=*
+//SYSTSIN  DD *
+  DSN SYSTEM(DB2A)
+  BIND PACKAGE(COL_BANKING) MEMBER(BNK7100B) -
+       ACTION(REPLACE) -
+       EXPLAIN(YES) -
+       PLANMGMT(EXTENDED) -
+       APREUSE(NONE)
+  END
+/*
+          </div>
+
+          <div style="background: var(--cds-ui-02); padding: 1rem; border-radius: 2px;">
+            <p style="font-size: 0.875rem; color: #525252;">
+              💡 <strong>Key Mainframe Value:</strong> No COBOL source code modification or application recompilation is required. The Db2 optimizer leverages the new covering index during the package rebind step.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4 CONTAINER -->
+      <div id="step4View" class="step-view" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1 class="content-title">Step 4: Verified Performance Proof & Access Path Delta</h1>
+            <p class="content-subtitle">Side-by-side verification proving dramatic reduction in getpages, CPU consumption, and batch elapsed time.</p>
+          </div>
+          <button class="btn btn-secondary" onclick="goToStep(1)">
+            ↺ Restart Demonstration
+          </button>
+        </div>
+
+        <div class="compare-grid" style="margin-top: 1rem;">
+          <!-- Before Card -->
+          <div class="compare-card before">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; color: var(--cds-support-01);">BASELINE (Before Db2ZAI)</h3>
+              <span class="badge-alert">Slow Path</span>
+            </div>
+
+            <div class="metric-row">
+              <span class="metric-label">Access Type (`ACCESSTYPE`)</span>
+              <span class="metric-value">Index Scan ('I')</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Index-Only Access (`INDEXONLY`)</span>
+              <span class="metric-value" style="color: var(--cds-support-01);">NO ('N')</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Matching Columns (`MATCHCOLS`)</span>
+              <span class="metric-value">1</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Buffer Pool Getpages</span>
+              <span class="metric-value" style="color: var(--cds-support-01);">2,480,120</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Class 2 CPU Time</span>
+              <span class="metric-value">18.42s</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Batch Elapsed Time</span>
+              <span class="metric-value">47.10s</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Optimizer Timerons</span>
+              <span class="metric-value">84,250</span>
+            </div>
+          </div>
+
+          <!-- After Card -->
+          <div class="compare-card after">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3 style="font-size: 1rem; font-weight: 600; color: var(--cds-support-02);">OPTIMIZED (After Db2ZAI Rebind)</h3>
+              <span class="badge-success">Index-Only Access</span>
+            </div>
+
+            <div class="metric-row">
+              <span class="metric-label">Access Type (`ACCESSTYPE`)</span>
+              <span class="metric-value">Covering Index Scan ('I')</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Index-Only Access (`INDEXONLY`)</span>
+              <span class="metric-value" style="color: var(--cds-support-02);">YES ('Y')</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Matching Columns (`MATCHCOLS`)</span>
+              <span class="metric-value">2 <span class="delta-pill positive">+100%</span></span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Buffer Pool Getpages</span>
+              <span class="metric-value" style="color: var(--cds-support-02);">44,210 <span class="delta-pill positive">-98.2%</span></span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Class 2 CPU Time</span>
+              <span class="metric-value" style="color: var(--cds-support-02);">1.18s <span class="delta-pill positive">-93.6%</span></span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Batch Elapsed Time</span>
+              <span class="metric-value" style="color: var(--cds-support-02);">3.05s <span class="delta-pill positive">-93.5%</span></span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-label">Optimizer Timerons</span>
+              <span class="metric-value" style="color: var(--cds-support-02);">6,810 <span class="delta-pill positive">-91.9%</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cds-tile" style="margin-top: 1.5rem;">
+          <div class="tile-title" style="margin-bottom: 0.75rem;">Executive Business Value Summary</div>
+          <p style="font-size: 0.875rem; color: #525252; line-height: 1.6;">
+            By transforming Statement #420 from a table-touching scan into an <strong>index-only access path</strong>, the overnight batch run achieved a <strong>93.5% elapsed time reduction</strong> and a <strong>98.2% decrease in buffer pool I/O</strong>. Scaled across nightly batch cycles, this directly reduces mainframe MSU/MIPS licensing utilization and guarantees batch SLA compliance.
+          </p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Presenter Script Panel -->
+  <div class="talktrack-panel" id="talkTrackPanel">
+    <div class="talktrack-header">
+      <h3 style="font-size: 1rem; font-weight: 600;">🎙️ Presenter Talk Track</h3>
+      <button onclick="toggleTalkTrack()" style="background: none; border: none; font-size: 1.25rem; cursor: pointer;">&times;</button>
+    </div>
+    <div class="talktrack-body" id="talkTrackContent">
+      <!-- Injected dynamically based on current step -->
+    </div>
+  </div>
+
+  <!-- Modal Simulation Progress -->
+  <div class="modal-overlay" id="simulationModal">
+    <div class="modal-card">
+      <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">Executing DDL & Package Rebind</h3>
+      <p style="font-size: 0.8125rem; color: #525252;" id="modalSubtitle">Applying covering index to BANKDB01.ACCT_TRANSACTION...</p>
+
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+
+      <div class="simulation-log" id="simulationLog">
+        [DSN] Connecting to DB2A (z/OS 3.1)...<br>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentStep = 1;
+
+    const talkTracks = {
+      1: `
+        <p><strong>Step 1: Baseline Problem Discovery</strong></p>
+        <p>Explain to the client that Db2 AI for z/OS continuously monitors static package executions without overhead.</p>
+        <div class="talktrack-quote">
+          "Notice here in the web console that our EOD batch package <code>COL_BANKING.BNK7100B</code> is flagged. Statement 420 takes over 47 seconds and burns 2.48 million getpages because it has to touch data pages for status filtering."
+        </div>
+      `,
+      2: `
+        <p><strong>Step 2: AI Optimization Insight</strong></p>
+        <p>Showcase how Db2ZAI machine learning algorithms evaluate table cardinality and host-variable predicate behavior.</p>
+        <div class="talktrack-quote">
+          "Db2ZAI formulates an actionable recommendation: extend the index by adding <code>STATUS_CODE</code> and <code>TXN_AMOUNT</code>. This transforms the query into 100% Index-Only access."
+        </div>
+      `,
+      3: `
+        <p><strong>Step 3: DDL & Zero-Code Rebind</strong></p>
+        <p>Emphasize zero disruption to existing application code.</p>
+        <div class="talktrack-quote">
+          "We do not need to modify, recompile, or test the COBOL source. We simply apply the index DDL and issue a standard Db2 REBIND PACKAGE command."
+        </div>
+      `,
+      4: `
+        <p><strong>Step 4: Proof of Results</strong></p>
+        <p>Deliver the ROI and business value pitch.</p>
+        <div class="talktrack-quote">
+          "Looking at the verified side-by-side metrics: buffer pool getpages dropped by 98.2%, CPU time dropped by 93.6%, and batch elapsed time plummeted from 47s down to 3s. That's direct MIPS/MSU savings."
+        </div>
+      `
+    };
+
+    function goToStep(step) {
+      currentStep = step;
+
+      // Update Nav
+      document.querySelectorAll('.nav-item').forEach((item, index) => {
+        if (index < 4) {
+          item.classList.toggle('active', index === step - 1);
+        }
+      });
+
+      document.querySelectorAll('.step-node').forEach((node, index) => {
+        node.classList.toggle('active', index === step - 1);
+        node.classList.toggle('completed', index < step - 1);
+      });
+
+      // Update Views
+      for (let i = 1; i <= 4; i++) {
+        const view = document.getElementById(`step${i}View`);
+        if (view) {
+          view.style.display = (i === step) ? 'block' : 'none';
+        }
+      }
+
+      // Update Talk Track
+      document.getElementById('talkTrackContent').innerHTML = talkTracks[step];
+    }
+
+    function toggleTalkTrack() {
+      document.getElementById('talkTrackPanel').classList.toggle('open');
+    }
+
+    function runRebindSimulation() {
+      const modal = document.getElementById('simulationModal');
+      const progressFill = document.getElementById('progressFill');
+      const log = document.getElementById('simulationLog');
+      const subtitle = document.getElementById('modalSubtitle');
+
+      modal.classList.add('active');
+      progressFill.style.width = '0%';
+      log.innerHTML = '[DSN] Connecting to DB2A subsystem...<br>';
+
+      setTimeout(() => {
+        progressFill.style.width = '30%';
+        log.innerHTML += '[DDL] CREATE INDEX BANKDB01.IX_TXN_ACCT_EOD... SUCCESS (RC=0)<br>';
+        subtitle.innerText = 'Index created. Invoking REBIND PACKAGE with EXPLAIN(YES)...';
+      }, 700);
+
+      setTimeout(() => {
+        progressFill.style.width = '70%';
+        log.innerHTML += '[BIND] REBIND PACKAGE(COL_BANKING.BNK7100B) EXPLAIN(YES)...<br>';
+        log.innerHTML += '[EXPLAIN] Selected ACCESSTYPE=I, INDEXONLY=Y, MATCHCOLS=2<br>';
+        subtitle.innerText = 'Rebind complete. Evaluating newly bound package metrics...';
+      }, 1500);
+
+      setTimeout(() => {
+        progressFill.style.width = '100%';
+        log.innerHTML += '[VERIFY] Access path verified: Cost reduced by 91.9% (RC=0)<br>';
+      }, 2300);
+
+      setTimeout(() => {
+        modal.classList.remove('active');
+        goToStep(4);
+      }, 2900);
+    }
+
+    // Initialize Step 1
+    goToStep(1);
+  </script>
+</body>
+</html>
